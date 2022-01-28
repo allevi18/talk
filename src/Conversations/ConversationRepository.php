@@ -66,6 +66,26 @@ class ConversationRepository extends BaseRepository
         return false;
     }
 
+    public function newConversation($user1, $user2)
+    {
+        $conversationId = ConversationRepository::isExistsAmongTwoUsers($user1, $user2);
+//        $user = $this->getSerializeUser($this->authUserId, $receiverId);
+
+        if ($conversationId === false) {
+            $conversation = Conversation::create([
+                'user_one' => $user1,
+                'user_two' => $user2,
+                'status' => 1,
+            ]);
+
+            if ($conversation) {
+                return $conversation->id;
+            }
+        }
+
+        return $conversationId;
+    }
+
     /*
      * check this given user is involved with this given $conversation
      *
@@ -75,13 +95,15 @@ class ConversationRepository extends BaseRepository
      * */
     public function isUserExists($conversationId, $userId)
     {
-        return Conversation::where('id', $conversationId)
+        $exists = Conversation::where('id', $conversationId)
             ->where(
                 function ($query) use ($userId) {
                     $query->where('user_one', $userId)->orWhere('user_two', $userId);
                 }
             )
             ->exists();
+
+        return $exists;
     }
 
     /*
