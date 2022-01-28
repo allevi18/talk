@@ -1,8 +1,8 @@
-<script src="https://js.pusher.com/3.2/pusher.min.js"></script>
+<script src="https://js.pusher.com/7.0/pusher.min.js"></script>
 <script>
-
-    // Enable pusher logging - don't include this in production
-    Pusher.logToConsole = true;
+    @if (Config::get('app.debug') === true)
+        Pusher.logToConsole = true;
+    @endif
     var pusher = new Pusher('{{$talk__appKey}}', {!! $talk__options !!});
 
     @if(!empty($talk__userChannel['name']))
