@@ -22,6 +22,7 @@ class Message extends Model implements HtmlStringInterface
         'deleted_from_sender',
         'deleted_from_receiver',
         'user_id',
+        'receiver_id',
         'conversation_id',
     ];
 
@@ -67,9 +68,23 @@ class Message extends Model implements HtmlStringInterface
    *
    * @return collection
    * */
+
     public function sender()
     {
         return $this->user();
+    }
+
+    /*
+    * its an alias of receiver relation
+    *
+    * @return collection
+    * */
+    public function receiver()
+    {
+        return $this->belongsTo(
+            config('talk.user.model', 'App\User'),
+            'receiver_id',
+        );
     }
 
     /**
