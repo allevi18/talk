@@ -23,6 +23,7 @@ class Message extends Model implements HtmlStringInterface
         'deleted_from_receiver',
         'user_id',
         'receiver_id',
+        'attachments',
         'conversation_id',
     ];
 
