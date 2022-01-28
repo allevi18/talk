@@ -20,6 +20,7 @@ class CreateMessagesTable extends Migration
             $table->boolean('deleted_from_sender')->default(0);
             $table->boolean('deleted_from_receiver')->default(0);
             $table->integer('user_id');
+             $table->integer('receiver_id');
             $table->integer('conversation_id');
             $table->timestamps();
         });
