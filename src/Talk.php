@@ -6,14 +6,13 @@
  *
  * @version 2.0.0
  *
- * @license https://github.com/nahid/apiz/blob/master/LICENSE (MIT)
+ * @license https://creativecommons.org/licenses/by/4.0/ (CC BY 4.0)
  */
 
 namespace Nahid\Talk;
 
 use Illuminate\Contracts\Config\Repository;
 use Nahid\Talk\Conversations\ConversationRepository;
-use Nahid\Talk\Messages\Message;
 use Nahid\Talk\Messages\MessageRepository;
 use Nahid\Talk\Live\Broadcast;
 
@@ -22,33 +21,33 @@ class Talk
     /**
      * configurations instance.
      *
-     * @var Repository
+     * @var \Illuminate\Contracts\Config\Repository
      */
     protected $config;
 
     /**
      * The ConversationRepository class instance.
      *
-     * @var ConversationRepository
+     * @var \Nahid\Talk\Conversations\ConversationRepository
      */
     protected $conversation;
 
     /**
      * The MessageRepository class instance.
      *
-     * @var MessageRepository
+     * @var \Nahid\Talk\Messages\MessageRepository
      */
     protected $message;
 
     /**
      * Broadcast class instance.
      *
-     * @var Broadcast
+     * @var \Nahid\Talk\Live\Broadcast
      */
     protected $broadcast;
 
     /**
-     * Currently loggedIn user id.
+     * Currently loggedin user id.
      *
      * @var int
      */
@@ -57,10 +56,8 @@ class Talk
     /**
      * Initialize and instantiate conversation and message repositories.
      *
-     * @param Repository $config
-     * @param Broadcast $broadcast
-     * @param ConversationRepository $conversation
-     * @param MessageRepository $message
+     * @param \Nahid\Talk\Conversations\ConversationRepository $conversation
+     * @param \Nahid\Talk\Messages\MessageRepository           $message
      */
     public function __construct(Repository $config, Broadcast $broadcast, ConversationRepository $conversation, MessageRepository $message)
     {
@@ -93,14 +90,15 @@ class Talk
      * @param int    $conversationId
      * @param string $message
      *
-     * @return Message
+     * @return \Nahid\Talk\Messages\Message
      */
-    protected function makeMessage($conversationId, $message)
+    protected function makeMessage($conversationId, $message, $receiver_id)
     {
         $message = $this->message->create([
             'message' => $message,
             'conversation_id' => $conversationId,
             'user_id' => $this->authUserId,
+            'receiver_id' => $receiver_id,
             'is_seen' => 0,
         ]);
 
@@ -145,9 +143,9 @@ class Talk
     protected function newConversation($receiverId)
     {
         $conversationId = $this->isConversationExists($receiverId);
+        $user = $this->getSerializeUser($this->authUserId, $receiverId);
 
         if ($conversationId === false) {
-            $user = $this->getSerializeUser($this->authUserId, $receiverId);
             $conversation = $this->conversation->create([
                 'user_one' => $user['one'],
                 'user_two' => $user['two'],
@@ -231,18 +229,18 @@ class Talk
     }
 
     /**
-     * send a message by using conversationId.
+     * send a message by using converstionid.
      *
-     * @param $conversationId
+     * @param int    $conversationId
      * @param string $message
      *
-     * @return Message|bool
+     * @return \Nahid\Talk\Messages\Message|bool
      */
-    public function sendMessage($conversationId, $message)
+    public function sendMessage($conversatonId, $message)
     {
-        if ($conversationId && $message) {
-            if ($this->conversation->existsById($conversationId)) {
-                $message = $this->makeMessage($conversationId, $message);
+        if ($conversatonId && $message) {
+            if ($this->conversation->existsById($conversatonId)) {
+                $message = $this->makeMessage($conversatonId, $message);
 
                 return $message;
             }
@@ -252,31 +250,30 @@ class Talk
     }
 
     /**
-     * create a new message by using receiverId.
+     * create a new message by using receiverid.
      *
      * @param int    $receiverId
      * @param string $message
      *
-     * @return Message
+     * @return \Nahid\Talk\Messages\Message
      */
     public function sendMessageByUserId($receiverId, $message)
     {
         if ($conversationId = $this->isConversationExists($receiverId)) {
-            $message = $this->makeMessage($conversationId, $message);
+            $message = $this->makeMessage($conversationId, $message, $receiverId);
 
             return $message;
         }
 
         $convId = $this->newConversation($receiverId);
-        $message = $this->makeMessage($convId, $message);
+        $message = $this->makeMessage($convId, $message, $receiverId);
 
         return $message;
     }
 
     /**
-     * fetch all inbox for currently loggedIn user with pagination.
+     * fetch all inbox for currently loggedin user with pagination.
      *
-     * @param string $order
      * @param int $offset
      * @param int $take
      *
@@ -290,7 +287,6 @@ class Talk
     /**
      * fetch all inbox with soft deleted message for currently loggedin user with pagination.
      *
-     * @param string $order
      * @param int $offset
      * @param int $take
      *
@@ -304,7 +300,6 @@ class Talk
     /**
      * its a alias of getInbox method.
      *
-     * @param string $order
      * @param int $offset
      * @param int $take
      *
@@ -318,7 +313,6 @@ class Talk
     /**
      * its a alias of getInboxAll method.
      *
-     * @param string $order
      * @param int $offset
      * @param int $take
      *
@@ -330,13 +324,13 @@ class Talk
     }
 
     /**
-     * fetch all conversation by using conversation id.
+     * fetch all conversation by using coversation id.
      *
      * @param int $conversationId
      * @param int $offset         = 0
      * @param int $take           = 20
      *
-     * @return false|Messages\Message|object
+     * @return \Nahid\Talk\Messages\Message
      */
     public function getConversationsById($conversationId, $offset = 0, $take = 20)
     {
@@ -352,7 +346,7 @@ class Talk
      * @param int $offset         = 0
      * @param int $take           = 20
      *
-     * @return Message
+     * @return \Nahid\Talk\Messages\Message
      */
     public function getConversationsAllById($conversationId, $offset = 0, $take = 20)
     {
@@ -368,7 +362,7 @@ class Talk
      * @param int $offset   = 0
      * @param int $take     = 20
      *
-     * @return Message|bool
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function getConversationsByUserId($senderId, $offset = 0, $take = 20)
     {
@@ -387,7 +381,7 @@ class Talk
      * @param int $offset   = 0
      * @param int $take     = 20
      *
-     * @return Message|bool
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function getConversationsAllByUserId($senderId, $offset = 0, $take = 20)
     {
@@ -403,9 +397,8 @@ class Talk
      * its an alias of getConversationById.
      *
      * @param int $conversationId
-     * @param int $offset
-     * @param int $take
-     * @return Message|bool
+     *
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function getMessages($conversationId, $offset = 0, $take = 20)
     {
@@ -416,9 +409,8 @@ class Talk
      * its an alias of getConversationAllById.
      *
      * @param int $conversationId
-     * @param int $offset
-     * @param int $take
-     * @return Message|bool
+     *
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function getMessagesAll($conversationId, $offset = 0, $take = 20)
     {
@@ -428,10 +420,9 @@ class Talk
     /**
      * its an alias by getConversationByUserId.
      *
-     * @param $userId
-     * @param int $offset
-     * @param int $take
-     * @return Message|bool
+     * @param int $senderId
+     *
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function getMessagesByUserId($userId, $offset = 0, $take = 20)
     {
@@ -441,10 +432,9 @@ class Talk
     /**
      * its an alias by getConversationAllByUserId.
      *
-     * @param $userId
-     * @param int $offset
-     * @param int $take
-     * @return Message|bool
+     * @param int $senderId
+     *
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function getMessagesAllByUserId($userId, $offset = 0, $take = 20)
     {
@@ -456,7 +446,7 @@ class Talk
      *
      * @param int $messageId
      *
-     * @return Message|bool
+     * @return \Nahid\Talk\Messages\Message|bool
      */
     public function readMessage($messageId = null)
     {
@@ -500,13 +490,14 @@ class Talk
     public function getReceiverInfo($conversationId)
     {
         $conversation = $this->conversation->find($conversationId);
+        $receiver = '';
         if ($conversation->user_one == $this->authUserId) {
             $receiver = $conversation->user_two;
         } else {
             $receiver = $conversation->user_one;
         }
 
-        $userModel = $this->config->get('talk.user.model');
+        $userModel = $this->config('talk.user.model');
         $user = new $userModel();
 
         return $user->find($receiver);
